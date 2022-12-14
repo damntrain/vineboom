@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Variables
+# All user configuration should go here, to get proper names use pipewire utils such as pw-link -l (i did so and it worked lul)
+	# Directory with goofy sounds
+		GOOFYPATH="$HOME/.local/share/vineboom/collection/"
+
+	# Microphone or application input source
+		inleft="Firefox:input_1"
+		inright="Firefox:input_2"
+
+	# Speakers 
+		outleft="alsa_output.pci-0000_00_1f.3.analog-stereo:playback_FL"
+		outright="alsa_output.pci-0000_00_1f.3.analog-stereo:playback_FR"
+
+# selbariaV
+
+function gotomic () # Connects cmus output to micrphone input 
+{
+	pw-link "C* Music Player:output_FL" "$inleft"
+	pw-link "C* Music Player:output_FR" "$inright"
+}
+
+function nottospeakers () # Disconnects cmus output from your speakers
+{
+	pw-link -d "C* Music Player:output_FL" "$outleft"
+	pw-link -d "C* Music Player:output_FR" "$outright"
+}
+
+function genlist () # Generate a list of files
+{
+	for file in "$GOOFYPATH"/*.mp3
+	do
+		echo "$file"
+	done
+}
+
+function random_array_element() # Print random array element
+{
+	local arr=("$@")
+	printf '%s\n' "${arr[RANDOM % $#]}"
+}
+
+function anyfile () # Generate array from list of files and print random element from it 
+{
+	array=($(genlist))
+	random_array_element "${array[@]}"
+}
+
+
+if [ -n "$1" ]
+then 
+	case "$1" in
+		"--file")
+			cmus-remote -f "$2"
+			gotomic
+			# nottospeakers
+			;;
+		"--list")
+			for f in "$GOOFYPATH"*.mp3; do
+			    printf '%s\n' "${f%.mp3}"
+			done
+			;;
+		*)
+			cmus-remote -f "$GOOFYPATH$1".mp3
+			gotomic
+			echo "$GOOFYPATH""$1".mp3
+			;;
+	esac
+else
+	randomgoofysound=$(anyfile)
+	cmus-remote -f "$randomgoofysound"
+	gotomic
+#	nottospeakers
+fi
+# echo "$GOOFYPATH""$1".mp3

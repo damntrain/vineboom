@@ -1,0 +1,12 @@
+[Unit]
+Description=cmus-tmux-session (for vineboom)
+After=tmux.service dbus-broker.service pipewire-pulse.service
+Wants=tmux.service dbus-broker.service pipewire-pulse.service
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tmux new-session -ds cmus cmus
+ExecStop=/usr/bin/tmux kill-session -t cmus
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical-session.target
