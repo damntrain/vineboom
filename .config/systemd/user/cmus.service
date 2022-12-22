@@ -1,7 +1,7 @@
 [Unit]
 Description=cmus-tmux-session (for vineboom)
-After=tmux.service dbus-broker.service pipewire-pulse.service
-Wants=tmux.service dbus-broker.service pipewire-pulse.service
+After=tmux.service dbus.service pipewire-pulse.service
+Wants=tmux.service dbus.service pipewire-pulse.service
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/tmux new-session -ds cmus cmus
