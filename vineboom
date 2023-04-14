@@ -45,7 +45,7 @@ it assumes that all files in your $g\$GOOFYPATH$d are .mp3 files\n"
 
 # Functions
 
-function play () # that's where your sounds will be produced 
+play () # that's where your sounds will be produced 
 {
 	if pgrep pw-play
 	then
