@@ -1,33 +1,83 @@
 #!/bin/bash
 
 # Variables
-# All user configuration should go here, to get proper names use pipewire utils such as pw-link -l (i did so and it worked lul)
-	# Directory with goofy sounds
-		GOOFYPATH="$HOME/.local/share/vineboom/collection/"
+# All user configuration should also go here,
+# to get proper values for inleft/inright/etc use pipewire utils
+# such as pw-link -l for everything, pw-link -i for input nodes, pw-link -o for output nodes
+# (i did so and it worked lul)
 
-	# Microphone or application input source
-		inleft="Firefox:input_1"
-		inright="Firefox:input_2"
+# Directory with goofy sounds
+GOOFYPATH="$HOME/.local/share/vineboom/collection/"
 
-	# Speakers 
-		outleft="alsa_output.pci-0000_00_1f.3.analog-stereo:playback_FL"
-		outright="alsa_output.pci-0000_00_1f.3.analog-stereo:playback_FR"
+# Microphone or application input source
+inleft="Firefox:input_1"
+inright="Firefox:input_2"
 
-# selbariaV
+# Speakers 
+outleft="alsa_output.pci-0000_00_1f.3.analog-stereo:playback_FL"
+outright="alsa_output.pci-0000_00_1f.3.analog-stereo:playback_FR"
 
-function gotomic () # Connects cmus output to micrphone input 
+# THE SOURCE OF GOOFINESS (the original app that produces your sounds)
+srcleft="pw-play:output_FL"
+srcright="pw-play:output_FR"
+
+# Colors
+GRN='\033[1;35m'
+# Yeah, color green is actually purple, top 5 sus amogus moments in coding history.
+NC='\033[0m' 
+g="${GRN}"
+d="${NC}"
+
+# Help message
+help="without options this script will play random mp3 file from $g\$GOOFYPATH$d
+your current $g\$GOOFYPATH$d is set to $g$GOOFYPATH$d
+you can change your $g\$GOOFYPATH$d by modifying this script.
+
+$g--list$d\t shows the list of available files in your $g\$GOOFYPATH$d
+$g--file$d\t plays file from given path (e.g$g vineboom --file /path/to/file.mp3$d)
+$g--help$d\t you are looking at it right now.
+
+you can also give name of a file in your $g\$GOOFYPATH$d as an argument
+e.g$g vineboom hitler$d will play file named$g hitler$d.mp3 from your $g\$GOOFYPATH$d
+notice that you don't need to type file extension in this case
+it assumes that all files in your $g\$GOOFYPATH$d are .mp3 files\n"
+
+
+# Functions
+
+function play () # that's where your sounds will be produced 
 {
-	pw-link "C* Music Player:output_FL" "$inleft"
-	pw-link "C* Music Player:output_FR" "$inright"
+	if pgrep pw-play
+	then
+		killall pw-play # It ensures that only one instance of pw-play is running
+	else
+		$(pw-play "$1")&
+		read -t 0.1 <> <(:) # basically a sleep for 0.1 but but using bash builtin
+							# you may wonder why sleep is needed
+							# the thing is that our pw-play command launches in separate thread
+							# without blocking exetuction of this script
+							# but pw-play still takes some time to launch itself
+							# sleep is put here to ensure that pw-play is already running
+							# by the time i will relink it's output
+							# since i can't relink output of non-existent sourc
+							# i need to wait for source to become available
+							# before even trying to link it.
+	fi
 }
 
-function nottospeakers () # Disconnects cmus output from your speakers
+gotomic () # Connects src output to micrphone input 
 {
-	pw-link -d "C* Music Player:output_FL" "$outleft"
-	pw-link -d "C* Music Player:output_FR" "$outright"
+	pw-link "$srcleft" "$inleft"
+	pw-link "$srcright" "$inright"
 }
 
-function genlist () # Generate a list of files
+nottospeakers () # Disconnects src output from your speakers, while still playing it to the input, i don't use this function, but it's here just in case.
+{
+	pw-link -d "$srcleft" "$outleft"
+	pw-link -d "$srcright" "$outright"
+}
+
+genlist () # Generate a list of files
 {
 	for file in "$GOOFYPATH"/*.mp3
 	do
@@ -35,42 +85,47 @@ function genlist () # Generate a list of files
 	done
 }
 
-function random_array_element() # Print random array element
+random_array_element() # Print random array element
 {
 	local arr=("$@")
 	printf '%s\n' "${arr[RANDOM % $#]}"
 }
 
-function anyfile () # Generate array from list of files and print random element from it 
+anyfile () # Generate array from list of files and print random element from it 
 {
 	array=($(genlist))
 	random_array_element "${array[@]}"
 }
 
 
-if [ -n "$1" ]
-then 
-	case "$1" in
-		"--file")
-			cmus-remote -f "$2"
-			gotomic
-			# nottospeakers
-			;;
-		"--list")
-			for f in "$GOOFYPATH"*.mp3; do
-			    printf '%s\n' "${f%.mp3}"
-			done
-			;;
-		*)
-			cmus-remote -f "$GOOFYPATH$1".mp3
-			gotomic
-			echo "$GOOFYPATH""$1".mp3
-			;;
-	esac
-else
-	randomgoofysound=$(anyfile)
-	cmus-remote -f "$randomgoofysound"
-	gotomic
-#	nottospeakers
-fi
-# echo "$GOOFYPATH""$1".mp3
+main ()
+{
+	if [ -n "$1" ]
+	then 
+		case "$1" in
+			"--file")
+				play "$2"
+				gotomic
+				# nottospeakers
+				;;
+			"--list")
+				for f in "$GOOFYPATH"*.mp3; do
+				    printf '%s\n' "${f%.mp3}"
+				done
+				;;
+			"--help")
+				echo -en "$help"
+				;; 
+			*)
+				play "$GOOFYPATH$1".mp3
+				gotomic
+				echo "$GOOFYPATH""$1".mp3
+				;;
+		esac
+	else
+		play $(anyfile)
+		gotomic
+	#	nottospeakers
+	fi
+}
+main "$@"
