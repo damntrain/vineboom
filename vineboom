@@ -59,7 +59,7 @@ play () # that's where your sounds will be produced
 							# but pw-play still takes some time to launch itself
 							# sleep is put here to ensure that pw-play is already running
 							# by the time i will relink it's output
-							# since i can't relink output of non-existent sourc
+							# since i can't relink output of non-existent source
 							# i need to wait for source to become available
 							# before even trying to link it.
 	fi
