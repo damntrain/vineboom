@@ -109,8 +109,10 @@ main ()
 				# nottospeakers
 				;;
 			"--list")
+				declare f s
 				for f in "$GOOFYPATH"*.mp3; do
-				    printf '%s\n' "${f%.mp3}"
+				    s="${f##*/}"
+				    echo "${s%%.mp3}"
 				done
 				;;
 			"--help")
