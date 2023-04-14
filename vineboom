@@ -45,13 +45,13 @@ it assumes that all files in your $g\$GOOFYPATH$d are .mp3 files\n"
 
 # Functions
 
-play () # that's where your sounds will be produced 
+function play () # that's where your sounds will be produced 
 {
 	if pgrep pw-play
 	then
 		killall pw-play # It ensures that only one instance of pw-play is running
 	else
-		$(pw-play "$1")&
+		eval pw-play "$1"&
 		read -t 0.1 <> <(:) # basically a sleep for 0.1 but but using bash builtin
 							# you may wonder why sleep is needed
 							# the thing is that our pw-play command launches in separate thread
@@ -59,7 +59,7 @@ play () # that's where your sounds will be produced
 							# but pw-play still takes some time to launch itself
 							# sleep is put here to ensure that pw-play is already running
 							# by the time i will relink it's output
-							# since i can't relink output of non-existent source
+							# since i can't relink output of non-existent sourc
 							# i need to wait for source to become available
 							# before even trying to link it.
 	fi
@@ -93,7 +93,7 @@ random_array_element() # Print random array element
 
 anyfile () # Generate array from list of files and print random element from it 
 {
-	array=($(genlist))
+	mapfile -t array < <(genlist)
 	random_array_element "${array[@]}"
 }
 
@@ -125,7 +125,7 @@ main ()
 				;;
 		esac
 	else
-		play $(anyfile)
+		play "$(anyfile)"
 		gotomic
 	#	nottospeakers
 	fi
